@@ -17,9 +17,9 @@ class PublicTagsApiTests(TestCase):
 
         self.client=APIClient()
 
-        def test_login_required(self):
-            res=self.client.get(TAGS_URL)
-            self.assertEqual(res.status_code,status.HTTP_401_UNAUTHORIZED)
+    def test_login_required(self):
+        res=self.client.get(TAGS_URL)
+        self.assertEqual(res.status_code,status.HTTP_401_UNAUTHORIZED)
 
 class ProivateTagsApiTests(TestCase):
 
@@ -27,7 +27,7 @@ class ProivateTagsApiTests(TestCase):
         self.user=get_user_model().objects.create_user(
             'test@1234.com','password123'
         )
-        slef.client=APIClient()
+        self.client=APIClient()
         self.client.force_authentication(self.user)
 
     def test_retrieve_tags(self):
@@ -54,3 +54,22 @@ class ProivateTagsApiTests(TestCase):
         self.assertEqual(res.status_code,status.HTTP_200_OK)
         self.assertEqual(len(res.data),1)
         self.assertEqual(res.data[0]['name'],tag.name)
+    
+    def test_create_tag_successful(self):
+        """Test creating a new tag"""
+        payload = {'name': 'Simple'}
+        self.client.post(TAGS_URL, payload)
+
+        exists = Tag.objects.filter(
+            user=self.user,
+            name=payload['name']
+        ).exists()
+        self.assertTrue(exists)
+
+    def test_create_tag_invalid(self):
+        """Test creating a new tag with invalid payload"""
+        payload = {'name': ''}
+        res = self.client.post(TAGS_URL, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+    
